@@ -30,6 +30,27 @@
 npm install
 ```
 
+## Cookie 自动管理
+
+本项目实现了自动化的Cookie管理系统：
+
+### 功能特性
+- ✅ **自动获取**：首次运行时自动获取有效的Cookie
+- ✅ **自动缓存**：Cookie保存到 `cookie-cache.json`
+- ✅ **自动刷新**：Cookie过期（2小时）后自动获取新的
+- ✅ **无需手动配置**：无需手动更新Cookie值
+
+### 手动更新Cookie
+如果需要手动更新Cookie，运行：
+```bash
+node get-cookie.js
+```
+该命令会：
+1. 获取最新的有效Cookie
+2. 验证Cookie是否可用（通过API测试）
+3. 自动保存到 `cookie-cache.json`
+4. 显示Cookie的有效期
+
 ## 使用方法
 
 ### 开发模式
@@ -46,6 +67,10 @@ npm run build
 ```bash
 npm start
 ```
+
+### 提问示例
+
+`@lottery` 进行全历史统计分析并生成10组推荐号码
 
 ## MCP工具说明
 

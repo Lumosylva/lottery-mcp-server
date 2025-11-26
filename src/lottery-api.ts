@@ -1,5 +1,6 @@
 import https from 'https';
 import { LotteryApiResponse, LotteryRawData, LotteryData, FrequencyStats, AnalysisResult } from './types';
+import { getCookie } from './cookie-manager';
 
 // 缓存数据
 let cachedData: LotteryData[] | null = null;
@@ -8,6 +9,9 @@ let cachedData: LotteryData[] | null = null;
  * 从API获取双色球数据
  */
 export async function fetchLotteryData(): Promise<LotteryApiResponse> {
+  // 获取有效的cookie（自动刷新过期的）
+  const cookie = await getCookie();
+
   return new Promise((resolve, reject) => {
     const options = {
       hostname: 'www.cwl.gov.cn',
@@ -16,7 +20,7 @@ export async function fetchLotteryData(): Promise<LotteryApiResponse> {
       headers: {
         'accept': 'application/json, text/javascript, */*; q=0.01',
         'referer': 'https://www.cwl.gov.cn/ygkj/wqkjgg/',
-        'cookie': 'HMF_CI=6e28aa79b81356fbb19efefb2046d5a894f39df3c89dc9e54c2d9ea9db4a5f3353d399f435faaf9c66a69c451aa049faf6f61e65664d3964a7d642afc7c41cee5a; 21_vq=5',
+        'cookie': cookie,
         'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36'
       }
     };

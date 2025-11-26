@@ -39,3 +39,6 @@ coverage/
 *.tmp
 *.temp
 .cache/
+
+# Cookie cache
+cookie-cache.json
