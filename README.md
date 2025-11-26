@@ -70,7 +70,13 @@ npm start
 
 ### 提问示例
 
+@lottery 给出最近5期的双色球开奖号码
+
+<img src="assets/question1.jpg" alt="question_one" style="zoom:67%;" />
+
 `@lottery` 进行全历史统计分析并生成10组推荐号码
+
+<img src="assets/question2.jpg" alt="question2" style="zoom:67%;" />
 
 ## MCP工具说明
 
