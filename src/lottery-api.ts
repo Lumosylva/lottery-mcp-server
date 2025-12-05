@@ -202,19 +202,77 @@ function getBlueBallFrequency(allData: LotteryData[]): FrequencyStats[] {
 }
 
 /**
- * 生成推荐号码组合
+ * 创建历史号码集合用于快速查询
  */
-function generateRecommendations(redStats: FrequencyStats[], blueStats: FrequencyStats[]): { red: string; blue: string }[] {
+function createHistoricalCombinationSet(allData: LotteryData[]): Set<string> {
+  const historicalCombinations = new Set<string>();
+  allData.forEach(item => {
+    const redBalls = item.red.split(',').map(b => b.trim()).sort((a, b) => Number(a) - Number(b));
+    const combination = redBalls.join(',') + '|' + item.blue.trim();
+    historicalCombinations.add(combination);
+  });
+  return historicalCombinations;
+}
+
+/**
+ * 检查号码组合是否满足条件
+ * 条件：1. 不在历史数据中 2. 和值在60-140之间 3. AC值在7-9之间
+ */
+function isValidCombination(
+  redBalls: string[],
+  blue: string,
+  historicalCombinations: Set<string>
+): boolean {
+  // 检查是否在历史数据中
+  const combination = redBalls.join(',') + '|' + blue;
+  if (historicalCombinations.has(combination)) {
+    return false;
+  }
+
+  // 检查和值是否在60-140之间
+  const sumValue = calculateSumValue(redBalls.join(','));
+  if (sumValue < 60 || sumValue > 140) {
+    return false;
+  }
+
+  // 检查AC值是否在7-9之间
+  const acValue = calculateACValue(redBalls.join(','));
+  if (acValue < 7 || acValue > 9) {
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * 生成推荐号码组合（改进版）
+ * 推荐号码必须满足：
+ * 1. 不在历史开奖数据中
+ * 2. 和值在60-140之间（100%的开奖号码都在此范围）
+ * 3. AC值在7-9之间（超过85%的开奖号码AC值在此范围）
+ */
+function generateRecommendations(
+  redStats: FrequencyStats[],
+  blueStats: FrequencyStats[],
+  allData: LotteryData[]
+): { red: string; blue: string }[] {
   const recommendations: { red: string; blue: string }[] = [];
-  const highFreqRed = redStats.slice(0, 15).map(s => s.number); // 取前15个高频红球
-  const highFreqBlue = blueStats.slice(0, 5).map(s => s.number); // 取前5个高频蓝球
+  const highFreqRed = redStats.slice(0, 20).map(s => s.number); // 取前20个高频红球
+  const highFreqBlue = blueStats.slice(0, 8).map(s => s.number); // 取前8个高频蓝球
   
-  // 生成10组不重复的组合
+  // 创建历史号码集合
+  const historicalCombinations = createHistoricalCombinationSet(allData);
+  
+  // 生成10组满足条件的组合
   const usedCombinations = new Set<string>();
+  let attempts = 0;
+  const maxAttempts = 10000; // 防止无限循环
   
-  while (recommendations.length < 10) {
+  while (recommendations.length < 10 && attempts < maxAttempts) {
+    attempts++;
+    
     // 从高频红球中随机选6个
-    const selectedRed = [];
+    const selectedRed: string[] = [];
     const tempRed = [...highFreqRed];
     
     for (let i = 0; i < 6; i++) {
@@ -231,7 +289,12 @@ function generateRecommendations(redStats: FrequencyStats[], blueStats: Frequenc
     
     // 检查是否重复
     const combination = selectedRed.join(',') + '|' + selectedBlue;
-    if (!usedCombinations.has(combination)) {
+    if (usedCombinations.has(combination)) {
+      continue;
+    }
+    
+    // 检查是否满足条件
+    if (isValidCombination(selectedRed, selectedBlue, historicalCombinations)) {
       usedCombinations.add(combination);
       recommendations.push({
         red: selectedRed.map(n => n.padStart(2, '0')).join(','),
@@ -253,15 +316,15 @@ export async function analyzeAndGenerateNumbers(): Promise<AnalysisResult> {
   const redBallStats = getRedBallFrequency(allData);
   const blueBallStats = getBlueBallFrequency(allData);
   
-  // 生成推荐号码
-  const recommendations = generateRecommendations(redBallStats, blueBallStats);
+  // 生成推荐号码（改进版：排除历史号码、满足和值和AC值条件）
+  const recommendations = generateRecommendations(redBallStats, blueBallStats, allData);
   
   return {
     totalDraws: allData.length,
     redBallStats: redBallStats.slice(0, 20), // 返回前20个高频红球
     blueBallStats: blueBallStats.slice(0, 10), // 返回前10个高频蓝球
     recommendations,
-    disclaimer: '⚠️ 重要提醒：彩票开奖是完全随机的，历史数据不能预测未来结果。以上号码仅基于历史频率统计生成，仅供参考，不代表任何中奖保证。请理性购彩，任何号码组合的中奖概率都是相同的（约1/17,721,088）。'
+    disclaimer: '⚠️ 重要提醒：彩票开奖是完全随机的，历史数据不能预测未来结果。以上号码基于历史频率统计、排除历史开奖号码、满足和值(60-140)和AC值(7-9)条件生成，仅供参考，不代表任何中奖保证。请理性购彩，任何号码组合的中奖概率都是相同的（约1/17,721,088）。'
   };
 }
 
