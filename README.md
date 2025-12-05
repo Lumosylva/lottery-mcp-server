@@ -4,13 +4,15 @@
 
 ## 功能特性
 
-提供5个MCP工具：
+提供7个MCP工具：
 
 1. **get_all_lottery_history** - 获取所有历史一等奖数据
 2. **get_lottery_by_date_range** - 按日期范围查询开奖数据
 3. **get_lottery_by_code** - 按期号查询开奖数据
 4. **get_latest_lottery** - 获取最新N期开奖数据
 5. **analyze_and_predict** - 分析历史数据并基于高频号码生成参考号码（仅供参考）
+6. **calculate_sum_value** - 计算最近N期开奖号码的和值（红球号码之和）
+7. **calculate_ac_value** - 计算最近N期开奖号码的AC值（算术复杂性）
 
 ## 数据格式
 
@@ -76,7 +78,23 @@ npm start
 
 `@lottery` 进行全历史统计分析并生成10组推荐号码
 
-<img src="assets/question2.jpg" alt="question2" style="zoom:67%;" />
+<img src="assets/question2-1.jpg" alt="question2" style="zoom:67%;" />
+
+<img src="assets/question2-2.jpg" alt="question2-2" style="zoom:67%;" />
+
+<img src="assets/question2-3.jpg" alt="question2-3" style="zoom:67%;" />
+
+@lottery 计算最近10期的和值
+
+<img src="assets/question3-1.jpg" alt="question3-1" style="zoom:67%;" />
+
+<img src="assets/question3-2.jpg" alt="question3-2" style="zoom:67%;" />
+
+@lottery 计算最近10期的AC值
+
+<img src="assets/question4-1.jpg" alt="question4-1" style="zoom:67%;" />
+
+<img src="assets/question4-2.jpg" alt="question4-2" style="zoom:67%;" />
 
 ## MCP工具说明
 
@@ -149,6 +167,99 @@ npm start
 - 彩票开奖是完全随机的，历史数据不能预测未来
 - 任何号码组合的中奖概率都是相同的
 - 请理性购彩，切勿沉迷
+
+### 6. calculate_sum_value
+计算最近N期开奖号码的和值（红球号码之和）
+
+**参数**：
+- `count` (number, 可选): 期数，默认10
+
+**返回**：SumValueResult对象，包含：
+- `count`: 计算的期数
+- `data`: 每期的开奖号码和对应的和值
+- `statistics`: 统计信息
+  - `averageSumValue`: 平均和值
+  - `minSumValue`: 最小和值
+  - `maxSumValue`: 最大和值
+  - `standardDeviation`: 标准差
+
+**返回示例**：
+```json
+{
+  "count": 10,
+  "data": [
+    {
+      "date": "2025-12-04(四)",
+      "code": "2025140",
+      "red": "01,03,04,12,18,24",
+      "sumValue": 62
+    },
+    ...
+  ],
+  "statistics": {
+    "averageSumValue": 115.5,
+    "minSumValue": 62,
+    "maxSumValue": 168,
+    "standardDeviation": 35.2
+  }
+}
+```
+
+**和值分析意义**：
+- 理论最小和值：21（1+2+3+4+5+6）
+- 理论最大和值：183（28+29+30+31+32+33）
+- 实战常见范围：80-140（约90%的开奖号码落在此区间）
+- 和值反映号码整体的"大小"倾向
+
+### 7. calculate_ac_value
+计算最近N期开奖号码的AC值（算术复杂性）
+
+**参数**：
+- `count` (number, 可选): 期数，默认10
+
+**返回**：ACValueResult对象，包含：
+- `count`: 计算的期数
+- `data`: 每期的开奖号码和对应的AC值
+- `statistics`: 统计信息
+  - `averageACValue`: 平均AC值
+  - `minACValue`: 最小AC值
+  - `maxACValue`: 最大AC值
+  - `distribution`: AC值分布（各AC值出现的次数）
+
+**返回示例**：
+```json
+{
+  "count": 10,
+  "data": [
+    {
+      "date": "2025-12-04(四)",
+      "code": "2025140",
+      "red": "01,03,04,12,18,24",
+      "acValue": 8
+    },
+    ...
+  ],
+  "statistics": {
+    "averageACValue": 7.8,
+    "minACValue": 6,
+    "maxACValue": 9,
+    "distribution": {
+      "6": 1,
+      "7": 3,
+      "8": 4,
+      "9": 2
+    }
+  }
+}
+```
+
+**AC值分析意义**：
+- AC值 = 不同差值的个数 - (号码数量 - 1)
+- 反映号码的离散程度和结构复杂性
+- 理论最小值：0（号码极其规律，如01,02,03,04,05,06）
+- 理论最大值：10（号码极度分散）
+- **黄金实战区间：7, 8, 9**（超过85%的开奖号码AC值落在此区间）
+- AC值过低（<5）或过高（10）的组合中奖概率极低
 
 ## 配置MCP客户端
 
