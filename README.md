@@ -76,7 +76,7 @@ npm start
 
 <img src="assets/question1.jpg" alt="question_one" style="zoom:67%;" />
 
-`@lottery` 进行全历史统计分析并生成10组推荐号码
+@lottery 进行全历史统计分析并生成10组推荐号码
 
 <img src="assets/question2-1.jpg" alt="question2" style="zoom:67%;" />
 
