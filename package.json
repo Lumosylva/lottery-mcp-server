@@ -1,7 +1,7 @@
 {
   "name": "lottery-mcp-server",
   "version": "1.0.0",
-  "description": "",
+  "description": "Double Color Ball Lottery MCP Server",
   "main": "index.js",
   "scripts": {
     "build": "tsc",

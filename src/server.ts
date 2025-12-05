@@ -9,7 +9,9 @@ import {
   getByDateRange,
   getByCode,
   getLatest,
-  analyzeAndGenerateNumbers
+  analyzeAndGenerateNumbers,
+  getLatestSumValues,
+  getLatestACValues
 } from './lottery-api';
 
 // 创建MCP服务器实例
@@ -93,6 +95,36 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           properties: {},
           required: []
         }
+      },
+      {
+        name: "calculate_sum_value",
+        description: "计算最近N期双色球开奖号码的和值（红球号码之和），默认N=10",
+        inputSchema: {
+          type: "object",
+          properties: {
+            count: {
+              type: "number",
+              description: "期数，默认为10",
+              default: 10
+            }
+          },
+          required: []
+        }
+      },
+      {
+        name: "calculate_ac_value",
+        description: "计算最近N期双色球开奖号码的AC值（算术复杂性），默认N=10。AC值反映号码的离散程度和结构复杂性，黄金区间为7-9",
+        inputSchema: {
+          type: "object",
+          properties: {
+            count: {
+              type: "number",
+              description: "期数，默认为10",
+              default: 10
+            }
+          },
+          required: []
+        }
       }
     ]
   };
@@ -174,6 +206,42 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       case "analyze_and_predict": {
         const result = await analyzeAndGenerateNumbers();
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(result, null, 2)
+            }
+          ]
+        };
+      }
+
+      case "calculate_sum_value": {
+        const { count = 10 } = args as { count?: number };
+        
+        if (count <= 0) {
+          throw new Error("期数必须大于0");
+        }
+
+        const result = await getLatestSumValues(count);
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(result, null, 2)
+            }
+          ]
+        };
+      }
+
+      case "calculate_ac_value": {
+        const { count = 10 } = args as { count?: number };
+        
+        if (count <= 0) {
+          throw new Error("期数必须大于0");
+        }
+
+        const result = await getLatestACValues(count);
         return {
           content: [
             {

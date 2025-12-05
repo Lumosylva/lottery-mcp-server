@@ -44,3 +44,39 @@ export interface AnalysisResult {
   }[];
   disclaimer: string;
 }
+
+// 和值计算结果
+export interface SumValueResult {
+  count: number;
+  data: {
+    date: string;
+    code: string;
+    red: string;
+    sumValue: number;
+  }[];
+  statistics: {
+    averageSumValue: number;
+    minSumValue: number;
+    maxSumValue: number;
+    standardDeviation: number;
+  };
+}
+
+// AC值计算结果
+export interface ACValueResult {
+  count: number;
+  data: {
+    date: string;
+    code: string;
+    red: string;
+    acValue: number;
+  }[];
+  statistics: {
+    averageACValue: number;
+    minACValue: number;
+    maxACValue: number;
+    distribution: {
+      [key: number]: number;
+    };
+  };
+}

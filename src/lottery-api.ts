@@ -1,5 +1,5 @@
 import https from 'https';
-import { LotteryApiResponse, LotteryRawData, LotteryData, FrequencyStats, AnalysisResult } from './types';
+import { LotteryApiResponse, LotteryRawData, LotteryData, FrequencyStats, AnalysisResult, SumValueResult, ACValueResult } from './types';
 import { getCookie } from './cookie-manager';
 
 // 缓存数据
@@ -242,5 +242,103 @@ export async function analyzeAndGenerateNumbers(): Promise<AnalysisResult> {
     blueBallStats: blueBallStats.slice(0, 10), // 返回前10个高频蓝球
     recommendations,
     disclaimer: '⚠️ 重要提醒：彩票开奖是完全随机的，历史数据不能预测未来结果。以上号码仅基于历史频率统计生成，仅供参考，不代表任何中奖保证。请理性购彩，任何号码组合的中奖概率都是相同的（约1/17,721,088）。'
+  };
+}
+
+/**
+ * 计算红球和值（红球号码之和）
+ */
+function calculateSumValue(redBalls: string): number {
+  const balls = redBalls.split(',').map(b => parseInt(b.trim(), 10));
+  return balls.reduce((sum, ball) => sum + ball, 0);
+}
+
+/**
+ * 计算AC值（算术复杂性）
+ * AC值 = 不同差值的个数 - (号码数量 - 1)
+ */
+function calculateACValue(redBalls: string): number {
+  const balls = redBalls.split(',').map(b => parseInt(b.trim(), 10)).sort((a, b) => a - b);
+  
+  // 计算所有两两之间的差值
+  const differences = new Set<number>();
+  
+  for (let i = 0; i < balls.length; i++) {
+    for (let j = i + 1; j < balls.length; j++) {
+      differences.add(balls[j] - balls[i]);
+    }
+  }
+  
+  // AC值 = 不同差值的个数 - (号码数量 - 1)
+  return differences.size - (balls.length - 1);
+}
+
+/**
+ * 获取最近N期的和值数据
+ */
+export async function getLatestSumValues(count: number = 10): Promise<SumValueResult> {
+  const allData = await getCachedOrFetchData();
+  const latestData = allData.slice(0, count);
+  
+  // 计算每期的和值
+  const data = latestData.map(item => ({
+    date: item.date,
+    code: item.code,
+    red: item.red,
+    sumValue: calculateSumValue(item.red)
+  }));
+  
+  // 计算统计信息
+  const sumValues = data.map(d => d.sumValue);
+  const average = sumValues.reduce((a, b) => a + b, 0) / sumValues.length;
+  const variance = sumValues.reduce((sum, val) => sum + Math.pow(val - average, 2), 0) / sumValues.length;
+  const standardDeviation = Math.sqrt(variance);
+  
+  return {
+    count: data.length,
+    data,
+    statistics: {
+      averageSumValue: Number(average.toFixed(2)),
+      minSumValue: Math.min(...sumValues),
+      maxSumValue: Math.max(...sumValues),
+      standardDeviation: Number(standardDeviation.toFixed(2))
+    }
+  };
+}
+
+/**
+ * 获取最近N期的AC值数据
+ */
+export async function getLatestACValues(count: number = 10): Promise<ACValueResult> {
+  const allData = await getCachedOrFetchData();
+  const latestData = allData.slice(0, count);
+  
+  // 计算每期的AC值
+  const data = latestData.map(item => ({
+    date: item.date,
+    code: item.code,
+    red: item.red,
+    acValue: calculateACValue(item.red)
+  }));
+  
+  // 计算统计信息
+  const acValues = data.map(d => d.acValue);
+  const average = acValues.reduce((a, b) => a + b, 0) / acValues.length;
+  
+  // 计算AC值分布
+  const distribution: { [key: number]: number } = {};
+  acValues.forEach(val => {
+    distribution[val] = (distribution[val] || 0) + 1;
+  });
+  
+  return {
+    count: data.length,
+    data,
+    statistics: {
+      averageACValue: Number(average.toFixed(2)),
+      minACValue: Math.min(...acValues),
+      maxACValue: Math.max(...acValues),
+      distribution
+    }
   };
 }
