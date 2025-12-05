@@ -1,8 +1,9 @@
 import https from 'https';
 import { LotteryApiResponse, LotteryRawData, LotteryData, FrequencyStats, AnalysisResult, SumValueResult, ACValueResult } from './types';
 import { getCookie } from './cookie-manager';
+import { getCachedData, saveLotteryDataToCache } from './data-cache-manager';
 
-// 缓存数据
+// 内存缓存数据（二级缓存）
 let cachedData: LotteryData[] | null = null;
 
 /**
@@ -64,12 +65,27 @@ export function transformData(rawData: LotteryRawData[]): LotteryData[] {
 
 /**
  * 获取缓存数据或从API获取
+ * 缓存策略：
+ * 1. 先检查内存缓存（二级缓存）
+ * 2. 再检查文件缓存（一级缓存）
+ * 3. 最后从API获取新数据
  */
 export async function getCachedOrFetchData(): Promise<LotteryData[]> {
+  // 检查内存缓存
   if (cachedData !== null) {
+    console.error('[Lottery API] 使用内存缓存数据');
     return cachedData;
   }
 
+  // 检查文件缓存
+  const fileCache = getCachedData();
+  if (fileCache !== null) {
+    cachedData = fileCache;
+    return cachedData;
+  }
+
+  // 从API获取新数据
+  console.error('[Lottery API] 从API获取新数据...');
   const apiResponse = await fetchLotteryData();
   
   if (apiResponse.state !== 0) {
@@ -77,6 +93,10 @@ export async function getCachedOrFetchData(): Promise<LotteryData[]> {
   }
 
   cachedData = transformData(apiResponse.result);
+  
+  // 保存到文件缓存
+  saveLotteryDataToCache(cachedData);
+  
   return cachedData;
 }
 
